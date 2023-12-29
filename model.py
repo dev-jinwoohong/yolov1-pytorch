@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torchvision.models
 
 
 class YoloV1(nn.Module):
@@ -61,8 +62,28 @@ class YoloV1(nn.Module):
         return out
 
 
+class YoloVGGV1(nn.Module):
+    def __init__(self, s=7, b=2, c=20):
+        super(YoloVGGV1, self).__init__()
+        self.backbone = torchvision.models.vgg13(weights='DEFAULT')
+
+        self.neck = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(1000, s * s * 1024),
+            nn.Linear(s * s * 1024, 4096),
+            nn.LeakyReLU(0.1),
+            nn.Linear(4096, s * s * (b * 5 + c))
+        )
+
+    def forward(self, x):
+        out = self.backbone(x)
+        out = self.neck(out)
+
+        return out
+
+
 if __name__ == "__main__":
-    model = YoloV1()
+    model = YoloVGGV1()
 
     x = torch.randn((1, 3, 448, 448))
 
